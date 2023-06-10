@@ -43,12 +43,14 @@ export class CellDiffModel {
               metadata: IStringDiffModel,
               outputs: OutputDiffModel[] | null,
               executionCount: ImmutableDiffModel | null,
-              cellType: string) {
+              cellType: string,
+              cellId: ImmutableDiffModel) {
     this.source = source;
     this.metadata = metadata;
     this.outputs = outputs;
     this.executionCount = executionCount;
     this.cellType = cellType;
+    this.cellId = cellId;
     if (outputs === null && cellType === 'code') {
       throw new NotifyUserError('Invalid code cell, missing outputs!');
     }
@@ -88,6 +90,10 @@ export class CellDiffModel {
    */
   cellType: string;
 
+  /**
+   * Diff model for the cell identifier.
+   */
+  cellId: ImmutableDiffModel;
 
   /**
    * Whether the cell has remained unchanged
@@ -195,7 +201,10 @@ function createPatchedCellDiffModel(
     // Pass base as remote, which means fall back to unchanged if no diff:
     executionCount = createImmutableModel(execBase, execBase, execDiff);
   }
-  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type);
+  let idBase = base.id as string | undefined;
+  let idDiff = getDiffEntryByKey(diff, 'id') as IDiffReplace | null;
+  const idModel = createImmutableModel(idBase, idBase, idDiff);
+  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type, idModel);
 }
 
 export
@@ -215,7 +224,9 @@ function createUnchangedCellDiffModel(
   } else {  // markdown or raw cell
 
   }
-  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type);
+  let idBase = base.id as string | undefined;
+  const idModel = createImmutableModel(idBase, idBase);
+  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type, idModel);
 }
 
 export
@@ -231,7 +242,9 @@ function createAddedCellDiffModel(
       null, remote.outputs);
     executionCount = createImmutableModel(null, remote.execution_count);
   }
-  return new CellDiffModel(source, metadata, outputs, executionCount, remote.cell_type);
+  let idRemote = remote.id as string | undefined;
+  const idModel = createImmutableModel(null, idRemote);
+  return new CellDiffModel(source, metadata, outputs, executionCount, remote.cell_type, idModel);
 }
 
 export
@@ -247,5 +260,7 @@ function createDeletedCellDiffModel(
     let execBase = base.execution_count;
     executionCount = createImmutableModel(execBase, null);
   }
-  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type);
+  let idBase = base.id as string | undefined;
+  const idModel = createImmutableModel(idBase, null);
+  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type, idModel);
 }

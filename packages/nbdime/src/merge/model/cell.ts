@@ -115,7 +115,8 @@ function createPatchedCellDecisionDiffModel(
 
   }
 
-  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type);
+  let idModel = createImmutableModel(base.id ? (base.id as string) : null, null);
+  return new CellDiffModel(source, metadata, outputs, executionCount, base.cell_type, idModel);
 }
 
 

@@ -12,7 +12,7 @@ import type {
 
 
 
-export type ImmutableValue = number | boolean | null;
+export type ImmutableValue = string | number | boolean | null;
 
 
 /**

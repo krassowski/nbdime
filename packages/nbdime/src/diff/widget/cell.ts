@@ -53,7 +53,9 @@ const CELLDIFF_CLASS = 'jp-Cell-diff';
 export
 const OUTPUTS_DIFF_CLASS = 'jp-Diff-outputsContainer';
 
-const EXECUTIONCOUNT_ROW_CLASS = 'jp-Cellrow-executionCount';
+const EXECUTION_COUNT_CLASS = 'jp-Cellrow-header-executionCount';
+const CELL_ID_CLASS = 'jp-Cellrow-header-cellId';
+const HEADER_ROW_CLASS = 'jp-Cellrow-header';
 const SOURCE_ROW_CLASS = 'jp-Cellrow-source';
 const METADATA_ROW_CLASS = 'jp-Cellrow-metadata';
 const OUTPUTS_ROW_CLASS = 'jp-Cellrow-outputs';
@@ -100,10 +102,41 @@ class CellDiffWidget extends Panel {
     let sourceView = CellDiffWidget.createView(
       model.source, model, CURR_DIFF_CLASSES, this._rendermime);
     sourceView.addClass(SOURCE_ROW_CLASS);
-    if (model.executionCount) {
-      sourceView.insertWidget(0, CellDiffWidget.createPrompts(
-        model.executionCount, model));
+
+    if (model.executionCount || model.cellId) {
+      const createWidget = (text: string): Widget => {
+        let w = new Widget();
+        w.node.innerText = text;
+        return w;
+      }
+      const header = CellDiffWidget.createHeader();
+      FlexPanel.setGrow(header, 1);
+      sourceView.insertWidget(0, header);
+
+      const prompts = model.executionCount ? CellDiffWidget.createPrompts(
+          model.executionCount, model) : {base: null, remote: null}
+      const ids = model.cellId ? CellDiffWidget.createIdentifiers(
+          model.cellId, model) : {base: null, remote: null}
+
+      const views: ('base' | 'remote')[] = ['base', 'remote'];
+      for (let side of views) {
+        const prompt = prompts[side];
+        const id = ids[side];
+        if (model.executionCount && prompt !== null) {
+          let w = createWidget(prompt);
+          w.addClass(PROMPT_CLASS);
+          w.addClass(EXECUTION_COUNT_CLASS);
+          header.addWidget(w);
+        }
+        if (model.cellId && id !== null) {
+          let w = createWidget(id);
+          w.addClass(CELL_ID_CLASS);
+          FlexPanel.setGrow(w, 1);
+          header.addWidget(w);
+        }
+      }
     }
+
     this.addWidget(sourceView);
 
     if (!model.metadata.unchanged) {
@@ -157,28 +190,33 @@ class CellDiffWidget extends Panel {
     }
   }
 
-  static createPrompts(model: ImmutableDiffModel, parent: CellDiffModel): Panel {
-    let prompts: string[] = [];
+  static createHeader(): Panel {
+    let container = new FlexPanel({direction: 'left-to-right'});
+    container.addClass(HEADER_ROW_CLASS);
+    return container;
+  }
+
+  static createPrompts(model: ImmutableDiffModel, parent: CellDiffModel): Record<'base' | 'remote', string | null> {
+    const prompts: Record<'base' | 'remote', string | null> = {
+      base: null,
+      remote: null
+    }
     if (!parent.added) {
       let base = model.base as number | null;
-      let baseStr = `In [${base || ' '}]:`;
-      prompts.push(baseStr);
+      prompts.base = `In [${base || ' '}]:`;
     }
     if (!parent.unchanged && !parent.deleted) {
       let remote = model.remote as number | null;
-      let remoteStr = `In [${remote || ' '}]:`;
-      prompts.push(remoteStr);
+      prompts.remote = `In [${remote || ' '}]:`;
     }
-    let container = new FlexPanel({direction: 'left-to-right'});
-    for (let text of prompts) {
-      let w = new Widget();
-      w.node.innerText = text;
-      w.addClass(PROMPT_CLASS);
-      container.addWidget(w);
-      FlexPanel.setGrow(w, 1);
-    }
-    container.addClass(EXECUTIONCOUNT_ROW_CLASS);
-    return container;
+    return prompts;
+  }
+
+  static createIdentifiers(model: ImmutableDiffModel, parent: CellDiffModel): Record<'base' | 'remote', string | null> {
+    return {
+      base: model.base as string | null,
+      remote: model.remote as string | null
+    };
   }
 
   /**
