@@ -129,7 +129,7 @@ class CellDiffWidget extends Panel {
           header.addWidget(w);
         }
         if (model.cellId && id !== null) {
-          let w = createWidget(id);
+          let w = createWidget(`Cell ID: ${id}`);
           w.addClass(CELL_ID_CLASS);
           FlexPanel.setGrow(w, 1);
           header.addWidget(w);
