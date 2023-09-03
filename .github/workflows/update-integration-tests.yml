@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: React to the triggering comment
         run: |
-          hub api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments/${{ github.event.comment.id }}/reactions --raw-field 'content=+1'
+          hub api repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions --raw-field 'content=+1'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
